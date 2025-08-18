@@ -5,8 +5,10 @@
 
 static constexpr int cell_size = 32; // Equal to the width and height of 'food.png'
 static constexpr int cell_count = 20;
-static constexpr Color bg_color = {173, 204, 96, 255};
-static constexpr Color snake_color = {43, 51, 24, 255};
+static constexpr int offset = 50;
+
+static constexpr Color green = {173, 204, 96, 255};
+static constexpr Color dark_green = {43, 51, 24, 255};
 
 static double last_update_time = 0;
 
@@ -38,9 +40,10 @@ struct Snake {
         for (std::size_t i = 0; i < body.size(); i++) {
             float x = body[i].x;
             float y = body[i].y;
-            Rectangle segment = Rectangle{x*cell_size, y*cell_size, 
-                                          cell_size, cell_size};
-            DrawRectangleRounded(segment, 0.5, 6, snake_color);
+            Rectangle segment = Rectangle{
+                                    offset+x*cell_size, offset+y*cell_size, 
+                                    cell_size, cell_size};
+            DrawRectangleRounded(segment, 0.5, 6, dark_green);
         }
     }
 
@@ -67,7 +70,7 @@ struct Food {
 
     Food(std::deque<Vector2> snake_body)
     {
-        Image image = LoadImage("./food.png");
+        Image image = LoadImage("assets/food.png");
         texture = LoadTextureFromImage(image);
         UnloadImage(image);
         position = generate_random_pos(snake_body);
@@ -75,7 +78,8 @@ struct Food {
 
     void draw()
     {
-        DrawTexture(texture, cell_size*position.x, cell_size*position.y, WHITE);
+        DrawTexture(texture, offset+cell_size*position.x, 
+                offset+cell_size*position.y, WHITE);
     }
 
     Vector2 generate_random_cell()
@@ -99,10 +103,30 @@ struct Game {
     Snake snake = Snake();
     Food food = Food(snake.body);
     bool running = true;
+    int score = 0;
+    Sound eat_sound;
+    Sound over_sound;
+
+    Game()
+    {
+        InitAudioDevice();
+        eat_sound = LoadSound("assets/eat.mp3");
+        over_sound = LoadSound("assets/over.mp3");
+    }
 
     void draw()
     {
-        ClearBackground(bg_color);
+        ClearBackground(green);
+        DrawRectangleLinesEx(
+                Rectangle{
+                    (float)offset - 5,
+                    (float)offset - 5,
+                    (float)cell_size*cell_count + 10,
+                    (float)cell_size*cell_count + 10
+                }, 5, dark_green);
+        DrawText("Snake Game", offset - 5, 0, 40, dark_green);
+        DrawText(TextFormat("socre: %i", score), offset - 5, 
+                cell_count*cell_size+offset+10, 30, dark_green);
         food.draw();
         snake.draw();
     }
@@ -141,6 +165,8 @@ struct Game {
         if (Vector2Equals(snake.body[0], food.position)) {
             food.position = food.generate_random_pos(snake.body);
             snake.add_segment = true;
+            score++;
+            PlaySound(eat_sound);
         }
     }
 
@@ -164,12 +190,16 @@ struct Game {
         snake.reset();
         food.position = food.generate_random_pos(snake.body);
         running = false;
+        score = 0;
+        PlaySound(over_sound);
     }
 };
 
 int main(void)
 {
-    InitWindow(cell_size*cell_count, cell_size*cell_count, "My Snake Game");
+    InitWindow(2*offset+cell_size*cell_count,
+               2*offset+cell_size*cell_count,
+               "My Snake Game");
     SetTargetFPS(60);
 
     Game game = Game();
