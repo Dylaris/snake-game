@@ -15,8 +15,8 @@ function Food:draw()
     love.graphics.setColor(unpack(_G.white))
     love.graphics.draw(
         self.image,
-        self.position.x * _G.cell_size,
-        self.position.y * _G.cell_size)
+        self.position.x * _G.cell_size + _G.offset,
+        self.position.y * _G.cell_size + _G.offset)
 end
 
 local function generate_random_cell()
